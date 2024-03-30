@@ -1,5 +1,8 @@
 <?php
 session_start();
+
+extract($_POST);
+extract($_GET);
 include('navbar.html');
 // Define your Spotify application credentials
 $client_id = 'afdca4875a4c45d0b8e504d6fbc9cb4a';
@@ -10,8 +13,8 @@ if(!isset($_SESSION['access_token'])){
 }
 // Check if the access token is already stored in the session
 if (isset($_SESSION['access_token'])) {
-     $access_token = $_SESSION['access_token'];
-
+    //$access_token = $_SESSION['access_token'];
+        $access_token = $_SESSION['access_token'];
         // Fetch user's profile information
         $profile_url = 'https://api.spotify.com/v1/me';
 
@@ -23,13 +26,13 @@ if (isset($_SESSION['access_token'])) {
         curl_close($ch_profile);
     
         $profile_data = json_decode($profile_response, true);
-    
+        $user_id = isset($profile_data['id']) ? $profile_data['id'] : '';
+
         // Extract client's name (display name)
         $client_name = isset($profile_data['display_name']) ? $profile_data['display_name'] : 'User';
 
-            // Display the client's name on the page
-    echo '<h1>Welcome, ' . $client_name . '!</h1>';
-
+    echo '<center><h1>Welcome, ' . $client_name . '!</h1></center><div id="left">';
+    echo '<form action="index.php" method="post"> Search : <input placeholder="search for playlist" name="pllst" type="text"></form>' ; // Display the client's name on the page
     
 } elseif (isset($_GET['code'])) {
     $code = $_GET['code'];
@@ -66,9 +69,17 @@ if (isset($_SESSION['access_token'])) {
 } else {
     echo 'Authorization code not found.';
 }
-
 // Step 2: Search for playlists with happy emotions
-$search_query = 'emotion'; // Search query for happy emotions
+
+if(!isset($_POST['pllst']) || $_POST['pllst']==''){
+$search_query = 'emotion'; 
+}else{
+$search_query = $_POST['pllst']; 
+}
+if(isset($_GET['pllst2'])){
+    $search_query = $_GET['pllst2'];  
+    }
+
 $type = 'playlist'; // Search type (playlist, track, etc.)
 
 $search_url = "https://api.spotify.com/v1/search?q=$search_query&type=$type";
@@ -76,8 +87,8 @@ $search_url = "https://api.spotify.com/v1/search?q=$search_query&type=$type";
 $ch = curl_init($search_url);
 curl_setopt($ch, CURLOPT_HTTPHEADER, array("Authorization: Bearer $access_token"));
 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
 $response = curl_exec($ch);
+
 curl_close($ch);
 
 $search_result = json_decode($response, true);
@@ -86,7 +97,7 @@ $search_result = json_decode($response, true);
 if (isset($search_result['playlists']['items'])) {
     $playlists = $search_result['playlists']['items'];
 
-    echo '<h1>Playlists related to  Emotions:</h1>';
+    echo '<h1>Playlists related to '.$search_query.':</h1>';
     echo '<ul id="playlists">';
     foreach ($playlists as $playlist) {
         echo '<li onclick="getplaylist(`' . $playlist['external_urls']['spotify']. '`)"><a>' . $playlist['name']. '</a></li>';
@@ -99,6 +110,8 @@ if (isset($search_result['playlists']['items'])) {
 } else {
     echo 'No playlists found for  emotions.';
 }
+
+echo '</div>';
 ?>
 
 <!DOCTYPE html>
@@ -110,7 +123,7 @@ if (isset($search_result['playlists']['items'])) {
 </head>
 <body>
     <!-- Embed Spotify player with Playlist URI -->
-    <iframe id='spotifyPlayer' src="https://open.spotify.com/embed/playlist/<?php echo $playlistId;?>?autoplay=true" width="600" height="580" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+    <div id="right"><iframe id='spotifyPlayer' src="https://open.spotify.com/embed/playlist/<?php echo $playlistId;?>?autoplay=true" width="600" height="580" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe></div>
 </body>
 </html>
 
@@ -126,6 +139,11 @@ const playlistId = parts[parts.length - 1];
 
 }
 
+function search(val){
+
+
+
+}
 
 
 </script>

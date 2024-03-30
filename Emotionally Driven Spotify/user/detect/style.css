@@ -1,10 +1,10 @@
 /* Body */
 
-#right{
+#spotifyPlayer{
     float:right;
-    margin-right: 10%;
 }
-#left{
+#playlists{
+
     float:left;
 }
 * {
@@ -15,9 +15,6 @@ body {
     background-color: #5c5c5c;
 }
 
-a{
-    cursor: pointer;
-}
 /* Nav Bar */
 
 li {
