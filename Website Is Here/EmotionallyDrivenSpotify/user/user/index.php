@@ -1,12 +1,13 @@
 <?php
-session_start();
-
+include('../config.php');
 extract($_POST);
 extract($_GET);
 if(!isset($_SESSION['username'])){
 header("Location: ../index.php");
 }
+$username=$_SESSION['username'];
 include('navbar.html');
+$j=0;
 /*// Define your Spotify application credentials
 $client_id = 'afdca4875a4c45d0b8e504d6fbc9cb4a';
 $client_secret = 'b9bfe0a0ae6b47deb6ff15f1423a68d5';
@@ -85,7 +86,18 @@ $search_query = 'emotion';
 $search_query = $_POST['pllst']; 
 }
 if(isset($_GET['pllst2'])){
-    $search_query = $_GET['pllst2'];  
+    $search_query = $_GET['pllst2']; 
+    $emotionPlaylists=[];
+// Display the playlist(s) related to happy emotions
+    for ($i = 0; $i < 5; $i++) {
+        $slct = "SELECT playlist_id FROM user_preferences WHERE username = '$username' AND emotion = '".$search_query.($i+1)."'";
+        $qry = $conn->query($slct);
+        $row = $qry->fetch_assoc();
+        if($row['playlist_id']!=''){
+            $emotionPlaylists["emotion" . ($j+1)] = $row['playlist_id'];
+            $j++;
+        }
+    } 
     }
 
 $type = 'playlist'; // Search type (playlist, track, etc.)
@@ -101,23 +113,32 @@ curl_close($ch);
 
 $search_result = json_decode($response, true);
 
-// Display the playlist(s) related to happy emotions
-if (isset($search_result['playlists']['items'])) {
-    $playlists = $search_result['playlists']['items'];
 
-    echo '<h1>Playlists related to '.$search_query.':</h1>';
-    echo '<ul id="playlists">';
-    foreach ($playlists as $playlist) {
-        echo '<li onclick="getplaylist(`' . $playlist['external_urls']['spotify']. '`)"><a>' . $playlist['name']. '</a></li>';
+    if($j>0){
+        echo '<h1>Playlists related to '.$search_query.':</h1>';
+        echo '<ul id="playlists">';
+        foreach($emotionPlaylists as $plst){
+            echo '<li onclick="getplaylist(`' . $plst. '`)"><a>' . $plst. '</a></li>';
+            $playlistId = $plst;
+        }
+        echo '</ul>';
 
-        $playlistUrl = $playlist['external_urls']['spotify'];
-        preg_match('/playlist\/(\w+)/', $playlistUrl, $matches);
-        $playlistId = isset($matches[1]) ? $matches[1] : null;
+    }elseif(isset($search_result['playlists']['items'])) {
+        $playlists = $search_result['playlists']['items'];
+
+        echo '<h1>Playlists related to '.$search_query.':</h1>';
+        echo '<ul id="playlists">';
+        foreach ($playlists as $playlist) {
+            echo '<li onclick="getplaylist(`' . $playlist['external_urls']['spotify']. '`)"><a>' . $playlist['name']. '</a></li>';
+
+            $playlistUrl = $playlist['external_urls']['spotify'];
+            preg_match('/playlist\/(\w+)/', $playlistUrl, $matches);
+            $playlistId = isset($matches[1]) ? $matches[1] : null;
+        }
+        echo '</ul>';
+    } else {
+        echo 'No playlists found for  emotions.';
     }
-    echo '</ul>';
-} else {
-    echo 'No playlists found for  emotions.';
-}
 
 echo '</div>';
 ?>
