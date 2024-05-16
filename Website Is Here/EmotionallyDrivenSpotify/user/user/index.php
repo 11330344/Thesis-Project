@@ -115,23 +115,52 @@ $search_result = json_decode($response, true);
 
 
     if($j>0){
+        $playlistId = $emotionPlaylists['emotion1'];
         echo '<h1>Playlists related to '.$search_query.':</h1>';
-        echo '<ul id="playlists">';
         foreach($emotionPlaylists as $plst){
-            echo '<li onclick="getplaylist(`' . $plst. '`)"><a>' . $plst. '</a></li>';
-            $playlistId = $plst;
-        }
-        echo '</ul>';
+        // Construct the URL to fetch the playlist details
+        $playlist_url = "https://api.spotify.com/v1/playlists/$plst";
 
-    }elseif(isset($search_result['playlists']['items'])) {
+        $ch = curl_init($playlist_url);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array("Authorization: Bearer $access_token"));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($ch);
+
+        curl_close($ch);
+
+        $playlist_info = json_decode($response, true);
+
+        if (isset($playlist_info['id'])) {
+            if($playlist_info['name']==''){
+            $plstname='No Name';
+            }else{
+            $plstname=$playlist_info['name'];
+            }
+            echo '<ul id="playlists">';
+                $playlist_id = $plst;
+                echo '<li onclick="getplaylist(`' . $playlist_url. '`)"><a>' .$plstname. '</a>';
+                echo ' <button onclick="sharePlaylist(`' . $playlist_url. '`)">Share</button></li>';
+            
+         /*   echo '<li>Playlist Name: ' . $playlist_info['name'] . '</li>';
+            echo '<li>Owner: ' . $playlist_info['owner']['display_name'] . '</li>';
+            echo '<li>Total Tracks: ' . $playlist_info['tracks']['total'] . '</li>';*/
+            // Add more details as needed
+            echo '</ul>';
+        } else {
+            echo 'Playlist not found or access denied.';
+        }
+
+
+    }
+}elseif(isset($search_result['playlists']['items'])) {
         $playlists = $search_result['playlists']['items'];
 
         echo '<h1>Playlists related to '.$search_query.':</h1>';
         echo '<ul id="playlists">';
         foreach ($playlists as $playlist) {
-            echo '<li onclick="getplaylist(`' . $playlist['external_urls']['spotify']. '`)"><a>' . $playlist['name']. '</a></li>';
-
             $playlistUrl = $playlist['external_urls']['spotify'];
+            echo '<li onclick="getplaylist(`' . $playlistUrl. '`)"><a>' . $playlist['name']. '</a>';
+            echo ' <button onclick="sharePlaylist(`' . $playlistUrl. '`)">Share</button></li>';
             preg_match('/playlist\/(\w+)/', $playlistUrl, $matches);
             $playlistId = isset($matches[1]) ? $matches[1] : null;
         }
@@ -149,30 +178,97 @@ echo '</div>';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Emotionally Driven Spotify</title>
+    <style>
+        body {
+        }
+
+        #left {
+            padding: 20px;
+        }
+
+        #right {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 600px;
+            height: 100%;
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        ul#playlists {
+            list-style: none;
+            padding: 0;
+        }
+
+        ul#playlists li {
+            background-color: #fff;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        ul#playlists li a {
+            text-decoration: none;
+            color: #333;
+            font-weight: bold;
+        }
+
+        ul#playlists li button {
+            background-color: #4267B2;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        ul#playlists li button:hover {
+            background-color: #365899;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        form input[type="text"] {
+            padding: 10px;
+            width: 100%;
+            max-width: 300px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        form {
+            margin-bottom: 20px;
+        }
+    </style>
 </head>
 <body>
-    <!-- Embed Spotify player with Playlist URI -->
-    <div id="right"><iframe id='spotifyPlayer' src="https://open.spotify.com/embed/playlist/<?php echo $playlistId;?>?autoplay=true" width="600" height="580" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe></div>
+    <div id="right">
+        <iframe id='spotifyPlayer' src="https://open.spotify.com/embed/playlist/<?php echo $playlistId;?>?autoplay=true" width="600" height="580" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+    </div>
 </body>
 </html>
 
 <script>
 function getplaylist(str){
     const playlistUrl = str;
-const parts = playlistUrl.split('/');
-const playlistId = parts[parts.length - 1];
+    const parts = playlistUrl.split('/');
+    const playlistId = parts[parts.length - 1];
 
-    const newSrc = 'https://open.spotify.com/embed/playlist/'+playlistId;
+    const newSrc = 'https://open.spotify.com/embed/playlist/' + playlistId;
     const spotifyPlayer = document.getElementById('spotifyPlayer');
     spotifyPlayer.src = newSrc;
-
 }
 
-function search(val){
-
-
-
+function sharePlaylist(playlistUrl) {
+    const fbShareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(playlistUrl)}`;
+    window.open(fbShareUrl, '_blank', 'width=600,height=400');
 }
-
-
 </script>
