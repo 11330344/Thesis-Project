@@ -79,7 +79,7 @@ if (isset($_GET['pllst2'])) {
         $slct = "SELECT playlist_id FROM user_preferences WHERE username = '$username' AND emotion = '" . $search_query . ($i + 1) . "'";
         $qry = $conn->query($slct);
         $row = $qry->fetch_assoc();
-        if ($row['playlist_id'] != '') {
+        if ($row && $row['playlist_id'] != '') {
             $emotionPlaylists["emotion" . ($j + 1)] = $row['playlist_id'];
             $j++;
         }
@@ -167,7 +167,7 @@ echo '</div>';
         }
 
         #right {
-            position: fixed;
+           /* position: fixed;*/
             top: 0;
             right: 0;
             width: 600px;
